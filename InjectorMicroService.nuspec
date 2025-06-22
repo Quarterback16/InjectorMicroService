@@ -1,0 +1,15 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>InjectorMicroService</id>
+    <version>1.0.0</version>
+    <authors>Steve</authors>
+    <owners>Knoware</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Injector library for Gerard the Butler</description>
+    <tags>utilities helpers logging</tags>
+  </metadata>
+  <files>
+    <file src="InjectorMicroService.dll" target="lib\netstandard2.0\" />
+  </files>
+</package>
