@@ -16,17 +16,15 @@ namespace InjectorMicroService
             StartDelimiter = "{";
             EndDelimiter = "}";
             _stemFolder = stemFolder;
+            if (!Directory.Exists(_stemFolder))
+                throw new ArgumentException($"Stem folder {_stemFolder} does not exist.");
         }
 
-        public string EndTag(string name)
-        {
-            return $"{StartDelimiter}/{name}{EndDelimiter}";
-        }
+        public string EndTag(string name) => 
+            $"{StartDelimiter}/{name}{EndDelimiter}";
 
-        public string StartTag(string name)
-        {
-            return $"{StartDelimiter}{name}{EndDelimiter}";
-        }
+        public string StartTag(string name) =>
+            $"{StartDelimiter}{name}{EndDelimiter}";
 
         public bool InjectMarkdown(
             string targetfile,
@@ -68,9 +66,50 @@ namespace InjectorMicroService
         }
 
         private string FullFileName(
-            string targetfile)
+            string targetfile) => $"{_stemFolder}{targetfile}";
+
+        public bool ContainsTag(
+            string targetfile, 
+            string tagName)
         {
-            return $"{_stemFolder}{targetfile}";
+            var fullTargetFile = FullFileName(targetfile);
+            if (File.Exists(fullTargetFile))
+            {
+                var startTag = StartTag(tagName);
+                var endTag = EndTag(tagName);
+                var text = File.ReadAllText(fullTargetFile);
+                if (text.Contains(startTag) 
+                    && text.Contains(endTag))
+                    return true;
+            }
+            return false;
+        }
+
+        public bool AppendTag(
+            string targetfile, 
+            string tagName,
+            string heading = "")
+        {
+            var fullTargetFile = FullFileName(targetfile);
+            if (File.Exists(fullTargetFile))
+            {
+                var sb = new StringBuilder()
+                    .AppendLine();
+
+                if (!string.IsNullOrEmpty(heading))
+                     sb
+                        .AppendLine($"## {heading}")
+                        .AppendLine();
+                sb.AppendLine(StartTag(tagName));
+                sb.AppendLine(EndTag(tagName));
+
+                File.AppendAllText(
+                    path: fullTargetFile,
+                    contents: sb.ToString(),
+                    encoding: Encoding.UTF8);
+                return true;
+            }
+            return false;
         }
     }
 }

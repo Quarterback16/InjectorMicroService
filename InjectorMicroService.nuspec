@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>InjectorMicroService</id>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
     <authors>Steve</authors>
     <owners>Knoware</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
