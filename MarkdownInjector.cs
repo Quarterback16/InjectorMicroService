@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace InjectorMicroService
@@ -85,6 +87,19 @@ namespace InjectorMicroService
             return false;
         }
 
+        public bool ContainsProperties(
+            string targetfile)
+        {
+            var fullTargetFile = FullFileName(targetfile);
+            if (File.Exists(fullTargetFile))
+            {
+                var text = File.ReadAllText(fullTargetFile);
+                if (text.Trim().StartsWith("---"))
+                    return true;
+            }
+            return false;
+        }
+
         public bool AppendTag(
             string targetfile, 
             string tagName,
@@ -110,6 +125,101 @@ namespace InjectorMicroService
                 return true;
             }
             return false;
+        }
+
+        public string FullPathTargetFile(
+            string targetfile) =>
+
+            FullFileName(targetfile);
+
+        public bool TargetFileExists(
+            string targetfile) =>
+
+            File.Exists(
+                FullFileName(targetfile));
+
+        public string ReadPropertyText(string targetfile)
+        {
+            var fullTargetFile = FullFileName(targetfile);
+            if (File.Exists(fullTargetFile))
+            {
+                var text = File.ReadAllText(fullTargetFile);
+                if (text.Trim().StartsWith("---"))
+                {
+                    var lines = text.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    var propertyLines = new List<string>();
+                    var inProperties = false;
+                    foreach (var line in lines)
+                    {
+                        if (line.Trim() == "---")
+                        {
+                            inProperties = !inProperties;
+                            continue;
+                        }
+                        if (inProperties)
+                        {
+                            propertyLines.Add(line);
+                        }
+                    }
+                    return string.Join("\n", propertyLines);
+                }
+            }
+            return string.Empty;
+        }
+
+        public bool HasProperty(
+            string propertyName, 
+            string targetFile)
+        {
+            var fullTargetFile = FullFileName(targetFile);
+            if (File.Exists(fullTargetFile))
+            {
+                var text = ReadPropertyText(targetFile);
+                var lines = text.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                return lines.Any(line => line.StartsWith($"{propertyName}:"));
+            }
+            return false;
+        }
+
+        public string PropertyValue(
+            string propertyName,
+            string targetFile)
+        {
+            var fullTargetFile = FullFileName(targetFile);
+            if (File.Exists(fullTargetFile))
+            {
+                var text = ReadPropertyText(targetFile);
+                var lines = text.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                var propertyLine = lines.FirstOrDefault(line => line.StartsWith($"{propertyName}:"));
+                if (propertyLine != null)
+                {
+                    var parts = propertyLine.Split(new[] { ':' }, 2);
+                    if (parts.Length == 2)
+                    {
+                        return parts[1].Trim();
+                    }
+                }
+            }
+            return string.Empty;
+        }
+
+        public string UpdateProperty(
+            string propertyName, 
+            string newValue, 
+            string targetFile)
+        {
+            var fullTargetFile = FullFileName(targetFile);
+            if (File.Exists(fullTargetFile))
+            {
+                var oldValue = PropertyValue(propertyName, targetFile);
+                var text = File.ReadAllText(fullTargetFile);
+                text = text.Replace(
+                    $"{propertyName}: {oldValue}",
+                    $"{propertyName}: {newValue}");
+                File.WriteAllText(fullTargetFile, text);
+                return text ?? string.Empty;
+            }
+            return string.Empty;
         }
     }
 }
