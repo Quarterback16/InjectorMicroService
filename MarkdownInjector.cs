@@ -211,15 +211,61 @@ namespace InjectorMicroService
             var fullTargetFile = FullFileName(targetFile);
             if (File.Exists(fullTargetFile))
             {
-                var oldValue = PropertyValue(propertyName, targetFile);
-                var text = File.ReadAllText(fullTargetFile);
-                text = text.Replace(
-                    $"{propertyName}: {oldValue}",
-                    $"{propertyName}: {newValue}");
-                File.WriteAllText(fullTargetFile, text);
-                return text ?? string.Empty;
+                if (HasProperty(propertyName, targetFile))
+                {
+                    var oldValue = PropertyValue(
+                        propertyName,
+                        targetFile);
+                    var text = File.ReadAllText(fullTargetFile);
+                    text = text.Replace(
+                        $"{propertyName}: {oldValue}",
+                        $"{propertyName}: {newValue}");
+                    File.WriteAllText(fullTargetFile, text);
+                    return text ?? string.Empty;
+                }
+                AddProperty(
+                    propertyName, 
+                    newValue, 
+                    targetFile,
+                    fullTargetFile);
             }
             return string.Empty;
         }
+
+        private void AddProperty(
+            string propertyName,
+            string newValue,
+            string targetFile,
+            string fullTargetFile)
+        {
+            if (HasProperties(targetFile))
+            {
+                var ptext = ReadPropertyText(targetFile);
+                var bodyText = File
+                    .ReadAllText(fullTargetFile)
+                    .Replace(Wrap(ptext), string.Empty);
+                ptext = ptext.Replace("---\n", string.Empty);
+                ptext = Wrap($"{ptext}\n{propertyName}: {newValue}");
+                var fullText = $"{ptext}{bodyText}";
+                File.WriteAllText(fullTargetFile, fullText);
+            }
+            else
+            {
+                var text = File.ReadAllText(fullTargetFile);
+                var newProps = Wrap($"{propertyName}: {newValue}");
+                File.WriteAllText(fullTargetFile, $"{newProps}{text}");
+            }
+        }
+
+        private static string Wrap(string ptext) =>
+            $"---\n{ptext}\n---\n";
+
+        public bool HasProperties(string targetFile)
+        {
+            var ptext = ReadPropertyText(targetFile);
+            var result = !String.IsNullOrEmpty(ptext);
+            return result;
+        }
+        
     }
 }
