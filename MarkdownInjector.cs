@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using YamlDotNet.Serialization;
 
 namespace InjectorMicroService
 {
@@ -266,6 +267,53 @@ namespace InjectorMicroService
             var result = !String.IsNullOrEmpty(ptext);
             return result;
         }
-        
+
+        public bool HasPropertyTag(
+            string propertyTag, 
+            string targetFile)
+        {
+            var fullTargetFile = FullFileName(targetFile);
+            if (File.Exists(fullTargetFile))
+            {
+                var text = ReadPropertyText(targetFile);
+                return text.Contains(propertyTag);
+            }
+            return false;
+        }
+
+        public string AddPropertyTag(
+            string propertyTag, 
+            string targetFile)
+        {
+            if (HasPropertyTag(
+                    propertyTag, 
+                    targetFile))
+                return string.Empty;
+
+            var ptext = ReadPropertyText(targetFile);
+
+            string newPtext;
+            if (String.IsNullOrEmpty(ptext))
+            {
+                newPtext = Wrap($"tags\n  - {propertyTag}");
+            }
+            else
+            {
+                newPtext = Wrap(
+                    YamlInspector.AddTagToYaml(
+                        ptext,
+                        propertyTag).TrimEnd('\r', '\n'));
+            }
+            var fullTargetFile = FullFileName(targetFile);
+            var bodyText = File
+                .ReadAllText(fullTargetFile)
+                .Replace(Wrap(ptext), string.Empty);
+
+            var fullText = $"{newPtext}{bodyText}";
+            File.WriteAllText(fullTargetFile, fullText);
+
+            return newPtext;
+        }
+
     }
 }
